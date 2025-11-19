@@ -1,5 +1,4 @@
 const fs = require("fs");
-
 const scrapeEventbrite = require("./eventbrite");
 
 async function runAll() {
