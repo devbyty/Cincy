@@ -1,1 +1,27 @@
-const axios=require("axios");const cheerio=require("cheerio");async function scrapeCityBeat(){try{const url="https://www.citybeat.com/events/";const html=(await axios.get(url)).data;const $=cheerio.load(html);const events=[];$(".event-item").each((i,el)=>{const title=$(el).find(".title").text().trim();const date=$(el).find(".date").text().trim();const location=$(el).find(".location").text().trim();const link=$(el).find("a").attr("href");if(!title||!date)return;const tag=$(el).find(".cat").text().trim().toLowerCase();const category=tag.includes("music")?"concerts":tag.includes("comedy")?"concerts":tag.includes("festival")?"markets":tag.includes("art")?"misc":"misc";events.push({title,date,location,category,url:link?"https://www.citybeat.com"+link:null,source:"citybeat"});});return events;}catch(e){return[]}}module.exports=scrapeCityBeat;
+const axios = require("axios");
+const xml2js = require("xml2js");
+
+async function scrapeCityBeat() {
+  try {
+    const url = "https://www.citybeat.com/events?format=rss";
+    const res = await axios.get(url);
+    const xml = res.data;
+
+    const parsed = await xml2js.parseStringPromise(xml);
+    const items = parsed.rss.channel[0].item || [];
+
+    return items.map(it => ({
+      title: it.title[0],
+      date: it.pubDate[0],
+      location: "Cincinnati",
+      url: it.link[0],
+      category: "events",
+      source: "citybeat"
+    }));
+  } catch (e) {
+    console.error("CityBeat error:", e.message);
+    return [];
+  }
+}
+
+module.exports = scrapeCityBeat;
