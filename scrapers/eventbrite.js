@@ -7,20 +7,39 @@ async function scrapeEventbriteCincinnati() {
 
     const res = await axios.get(url, {
       headers: {
-        // Pretend to be Chrome to bypass Eventbrite blocking bots
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-        "Accept": "application/rss+xml, application/xml, text/xml, */*"
+        "Accept": "application/rss+xml, application/xml;q=0.9,*/*;q=0.8"
       }
     });
 
     let xml = res.data;
 
-    // Sanitize invalid XML entities (&)
-    xml = xml.replace(/&(?![a-zA-Z]+;)/g, "&amp;");
+    // ---- CLEAN THE XML COMPLETELY ---- //
 
+    // Remove illegal control characters
+    xml = xml.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+
+    // Fix unescaped ampersands
+    xml = xml.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;)/g, "&amp;");
+
+    // Remove invalid HTML tags embedded inside XML
+    xml = xml.replace(/<[^ >]+=["'][^"']*["'][^>]*>/g, function (tag) {
+      return tag.replace(/["<>]/g, ""); // strip invalid chars inside tags
+    });
+
+    // Remove stray semicolons in tag names (main cause of your error)
+    xml = xml.replace(/<([^ >;]+);([^>]*)>/g, "<$1$2>");
+
+    // Strip HTML entirely from CDATA or description
+    xml = xml.replace(/<!\[CDATA\[(.*?)\]\]>/gs, (match, content) => {
+      return "<![CDATA[" + content.replace(/</g, "&lt;") + "]]>";
+    });
+
+    // Parse sanitized XML
     const parsed = await xml2js.parseStringPromise(xml);
-    const items = parsed.rss.channel[0].item || [];
+
+    const items = parsed?.rss?.channel?.[0]?.item || [];
 
     return items.map(it => ({
       title: it.title?.[0] || "",
@@ -30,6 +49,7 @@ async function scrapeEventbriteCincinnati() {
       category: "events",
       source: "eventbrite"
     }));
+
   } catch (e) {
     console.error("Eventbrite error:", e.message);
     return [];
