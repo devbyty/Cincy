@@ -1,1 +1,28 @@
-const axios=require("axios");const cheerio=require("cheerio");async function scrapeVisitCincy(){try{const url="https://www.visitcincy.com/events/";const html=(await axios.get(url)).data;const $=cheerio.load(html);const events=[];$(".event-item, .event").each((i,el)=>{const title=$(el).find(".event-title").text().trim()||$(el).find("h3").text().trim();const date=$(el).find(".event-date").text().trim()||$(el).find(".date").text().trim();const location=$(el).find(".event-location").text().trim()||$(el).find(".location").text().trim();const link=$(el).find("a").attr("href");if(!title||!date)return;events.push({title,date,location,category:"misc",url:link?"https://www.visitcincy.com"+link:null,source:"visitcincy"});});return events;}catch(e){return[]}}module.exports=scrapeVisitCincy;
+const axios = require("axios");
+const xml2js = require("xml2js");
+
+async function scrapeVisitCincy() {
+  try {
+    const url = "https://www.visitcincy.com/events/?format=rss";
+    const res = await axios.get(url);
+    const xml = res.data;
+
+    const parsed = await xml2js.parseStringPromise(xml);
+
+    const items = parsed.rss.channel[0].item || [];
+
+    return items.map(it => ({
+      title: it.title[0],
+      date: it.pubDate[0],
+      location: "Cincinnati",
+      url: it.link[0],
+      category: "events",
+      source: "visitcincy"
+    }));
+  } catch (err) {
+    console.error("VisitCincy error:", err.message);
+    return [];
+  }
+}
+
+module.exports = scrapeVisitCincy;
