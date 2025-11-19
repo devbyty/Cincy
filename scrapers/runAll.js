@@ -26,8 +26,8 @@ async function runAll() {
   console.log("VisitCincy:", vc.length);
 
   const eb = await scrapeEventbrite();
-console.log("Eventbrite:", eb.length);
-  
+  console.log("Eventbrite:", eb.length);
+
   const allEvents = [...rg, ...cb, ...fm, ...pk, ...vc, ...eb];
 
   console.log("TOTAL EVENTS:", allEvents.length);
