@@ -1,1 +1,27 @@
-const axios=require("axios");const cheerio=require("cheerio");async function scrapeParks(){try{const url="https://www.cincinnati-oh.gov/cincyparks/visit-us/events/";const html=(await axios.get(url)).data;const $=cheerio.load(html);const events=[];$(".event-item, .event, .list-item").each((i,el)=>{const title=$(el).find(".event-title").text().trim()||$(el).find("h3").text().trim();const date=$(el).find(".event-date").text().trim()||$(el).find(".date").text().trim();const location=$(el).find(".event-location").text().trim()||$(el).find(".location").text().trim()||"Cincinnati Parks";const link=$(el).find("a").attr("href");if(!title||!date)return;events.push({title,date,location,category:"parks",url:link?"https://www.cincinnati-oh.gov"+link:null,source:"cincyparks"});});return events;}catch(e){return[]}}module.exports=scrapeParks;
+const axios = require("axios");
+const ical = require("ical");
+
+async function scrapeParks() {
+  try {
+    const url = "https://www.cincinnati-oh.gov/cincyparks/events/ical/";
+    const res = await axios.get(url);
+    const events = ical.parseICS(res.data);
+
+    return Object.values(events)
+      .filter(e => e.type === "VEVENT")
+      .map(e => ({
+        title: e.summary,
+        date: e.start,
+        location: e.location || "Cincinnati Park",
+        url: e.url || "",
+        category: "parks",
+        source: "parks"
+      }));
+
+  } catch (e) {
+    console.error("Parks error:", e.message);
+    return [];
+  }
+}
+
+module.exports = scrapeParks;
