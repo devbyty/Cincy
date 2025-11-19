@@ -3,7 +3,8 @@ const xml2js = require("xml2js");
 
 async function scrapeEventbriteCincinnati() {
   try {
-    const url = "https://www.eventbrite.com/d/oh--cincinnati/events--this-weekend/?format=rss";
+    // Cincinnati events, next week, RSS feed
+    const url = "https://www.eventbrite.com/d/oh--cincinnati/events/?format=rss";
     const res = await axios.get(url);
     const xml = res.data;
 
@@ -14,7 +15,7 @@ async function scrapeEventbriteCincinnati() {
       title: it.title?.[0] || "",
       date: it.pubDate?.[0] || "",
       location: it["ev:location"]?.[0] || "Cincinnati",
-      url: it.link?.[0],
+      url: it.link?.[0] || "",
       category: "events",
       source: "eventbrite"
     }));
