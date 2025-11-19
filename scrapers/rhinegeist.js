@@ -1,1 +1,23 @@
-const axios=require("axios");const cheerio=require("cheerio");async function scrapeRhinegeist(){try{const url="https://rhinegeist.com/events/";const html=(await axios.get(url)).data;const $=cheerio.load(html);const events=[];$(".event-card").each((i,el)=>{const title=$(el).find(".event-card__title").text().trim()||$(el).find(".event-title").text().trim();const date=$(el).find(".event-card__date").text().trim()||$(el).find(".event-date").text().trim();const location="Rhinegeist Brewery";const link=$(el).find("a").attr("href");if(!title||!date)return;events.push({title,date,location,category:"breweries",url:link?"https://rhinegeist.com"+link:null,source:"rhinegeist"});});return events;}catch(e){return[]}}module.exports=scrapeRhinegeist;
+const axios = require("axios");
+
+async function scrapeRhinegeist() {
+  try {
+    const url = "https://rhinegeist.com/wp-json/wp/v2/event?per_page=50";
+    const res = await axios.get(url);
+    const data = res.data;
+
+    return data.map(e => ({
+      title: e.title.rendered,
+      date: e.acf?.event_date || "",
+      location: "Rhinegeist Brewery",
+      url: e.link,
+      category: "breweries",
+      source: "rhinegeist"
+    }));
+  } catch (e) {
+    console.error("Rhinegeist error:", e.message);
+    return [];
+  }
+}
+
+module.exports = scrapeRhinegeist;
