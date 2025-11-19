@@ -1,1 +1,34 @@
-const fs=require("fs");const path=require("path");const scrapeRhinegeist=require("./rhinegeist");const scrapeCityBeat=require("./citybeat");const scrapeFindlay=require("./findlay");const scrapeParks=require("./parks");const scrapeVisitCincy=require("./visitcincy");async function runAll(){const allEvents=[...(await scrapeRhinegeist()),...(await scrapeCityBeat()),...(await scrapeFindlay()),...(await scrapeParks()),...(await scrapeVisitCincy())];allEvents.sort((a,b)=>(a.date>b.date?1:-1));const dataDir=path.join(__dirname,"..","data");const catDir=path.join(dataDir,"categories");const metaDir=path.join(dataDir,"meta");[dataDir,catDir,metaDir].forEach(d=>{if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});});fs.writeFileSync(path.join(dataDir,"events.json"),JSON.stringify(allEvents,null,2));const categories={};for(const e of allEvents){const cat=e.category||"misc";if(!categories[cat])categories[cat]=[];categories[cat].push(e);}Object.keys(categories).forEach(cat=>{fs.writeFileSync(path.join(catDir,`${cat}.json`),JSON.stringify(categories[cat],null,2));});const log={last_run:new Date().toISOString(),total_events:allEvents.length,categories:Object.keys(categories)};fs.writeFileSync(path.join(metaDir,"scraper_log.json"),JSON.stringify(log,null,2));console.log("Scrape complete.")}runAll().catch(e=>{console.error("runAll failed:",e);process.exit(1)});
+const fs = require("fs");
+
+const scrapeRhinegeist = require("./rhinegeist");
+const scrapeCityBeat = require("./citybeat");
+const scrapeFindlay = require("./findlay");
+const scrapeParks = require("./parks");
+const scrapeVisitCincy = require("./visitcincy");
+
+async function runAll() {
+  console.log("Running scrapers...");
+
+  const rg = await scrapeRhinegeist();
+  console.log("Rhinegeist:", rg.length);
+
+  const cb = await scrapeCityBeat();
+  console.log("CityBeat:", cb.length);
+
+  const fm = await scrapeFindlay();
+  console.log("Findlay:", fm.length);
+
+  const pk = await scrapeParks();
+  console.log("Parks:", pk.length);
+
+  const vc = await scrapeVisitCincy();
+  console.log("VisitCincy:", vc.length);
+
+  const allEvents = [...rg, ...cb, ...fm, ...pk, ...vc];
+
+  console.log("TOTAL EVENTS:", allEvents.length);
+
+  fs.writeFileSync("./data/events.json", JSON.stringify(allEvents, null, 2));
+}
+
+runAll();
