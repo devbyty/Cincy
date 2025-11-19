@@ -3,10 +3,12 @@ const xml2js = require("xml2js");
 
 async function scrapeEventbriteCincinnati() {
   try {
-    // Cincinnati events, next week, RSS feed
     const url = "https://www.eventbrite.com/d/oh--cincinnati/events/?format=rss";
     const res = await axios.get(url);
-    const xml = res.data;
+    let xml = res.data;
+
+    // Fix invalid XML characters (Eventbrite uses raw '&')
+    xml = xml.replace(/&(?![a-zA-Z]+;)/g, "&amp;");
 
     const parsed = await xml2js.parseStringPromise(xml);
     const items = parsed.rss.channel[0].item || [];
