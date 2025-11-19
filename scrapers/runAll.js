@@ -5,6 +5,7 @@ const scrapeCityBeat = require("./citybeat");
 const scrapeFindlay = require("./findlay");
 const scrapeParks = require("./parks");
 const scrapeVisitCincy = require("./visitcincy");
+const scrapeEventbrite = require("./eventbrite");
 
 async function runAll() {
   console.log("Running scrapers...");
