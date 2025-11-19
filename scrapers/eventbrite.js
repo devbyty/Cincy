@@ -4,10 +4,19 @@ const xml2js = require("xml2js");
 async function scrapeEventbriteCincinnati() {
   try {
     const url = "https://www.eventbrite.com/d/oh--cincinnati/events/?format=rss";
-    const res = await axios.get(url);
+
+    const res = await axios.get(url, {
+      headers: {
+        // Pretend to be Chrome to bypass Eventbrite blocking bots
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*"
+      }
+    });
+
     let xml = res.data;
 
-    // Fix invalid XML characters (Eventbrite uses raw '&')
+    // Sanitize invalid XML entities (&)
     xml = xml.replace(/&(?![a-zA-Z]+;)/g, "&amp;");
 
     const parsed = await xml2js.parseStringPromise(xml);
